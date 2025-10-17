@@ -1,0 +1,140 @@
+<!-- Updated FreeFire Team Assigner with categories A, B, C, D, E, F, G, H -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FreeFire Team Assigner</title>
+  <style>
+    :root{
+      --bg:#f4f6fb; --card:#ffffff; --muted:#6b7280; --accent:#6366f1; --success:#10b981; --danger:#ef4444; --glass: rgba(255,255,255,0.6);
+    }
+    [data-theme="dark"]{ --bg:#0b1220; --card:#081123; --muted:#9aa4b2; --accent:#7c83ff; --success:#34d399; --danger:#fb7185; --glass: rgba(255,255,255,0.03);}
+    *{box-sizing:border-box}
+    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:linear-gradient(180deg,var(--bg), #e9eef9); min-height:100vh; color:var(--muted)}
+    header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px}
+    h1{margin:0;font-size:18px;color:var(--accent);letter-spacing:-0.2px}
+    .container{max-width:1100px;margin:16px auto;padding:18px}
+    .grid{display:grid;grid-template-columns:360px 1fr; gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(12,15,30,0.06);}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type=text], select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9f2;background:transparent}
+    .row{display:flex;gap:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white}
+    .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+    .muted{color:var(--muted);font-size:13px}
+    .player-list{margin-top:12px;max-height:320px;overflow:auto;padding-right:6px}
+    .player-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;margin-bottom:8px;background:var(--glass)}
+    .player-item .meta{font-size:13px}
+    .small{font-size:12px}
+    .teams-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .team-card{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);min-height:120px;border:1px solid rgba(0,0,0,0.04)}
+    .team-title{font-weight:600;color:var(--accent);margin-bottom:10px}
+    .player-chip{display:inline-flex;padding:6px 8px;border-radius:999px;background:rgba(0,0,0,0.04);margin:4px 4px 4px 0;font-size:13px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .top-actions{display:flex;gap:8px;align-items:center}
+    footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+    .category-badge{font-size:12px;padding:4px 6px;border-radius:8px;background:rgba(0,0,0,0.03);margin-left:8px}
+    .flex{display:flex;align-items:center}
+    .spacer{flex:1}
+    .danger{background:var(--danger);color:white}
+    .success{background:var(--success);color:white}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}header{flex-direction:column;gap:10px}}    
+  </style>
+</head>
+<body data-theme="light">
+  <header>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div>
+        <h1>FreeFire Team Assigner</h1>
+        <div class="muted small">Create balanced teams by category — edit names, add categories, reshuffle.</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="muted small">Theme</div>
+      <button id="themeToggle" class="btn btn-ghost">🌙</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+      <div class="card">
+        <label for="playerName">Player name</label>
+        <input id="playerName" type="text" placeholder="e.g. Player1" />
+        <label for="categorySelect">Category</label>
+        <select id="categorySelect"></select>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button id="addPlayerBtn" class="btn btn-primary">Add Player</button>
+          <input id="newCategoryInput" type="text" placeholder="Add category (press Enter)" />
+        </div>
+
+        <div style="margin-top:14px" class="muted small">Players (<span id="totalPlayers">0</span>)</div>
+        <div class="player-list" id="playerList"></div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(0,0,0,0.04)" />
+        <label for="teamCount">Number of teams</label>
+        <select id="teamCount">
+          <option>2</option>
+          <option selected>4</option>
+          <option>6</option>
+          <option>8</option>
+        </select>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="generateBtn" class="btn btn-primary">Generate Teams</button>
+          <button id="reshuffleBtn" class="btn btn-ghost">Reshuffle</button>
+          <button id="exportBtn" class="btn btn-ghost">Export CSV</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="saveBtn" class="btn small btn-ghost">Save</button>
+          <button id="resetBtn" class="btn small danger">Reset All</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="muted small">Teams will appear here after generation</div>
+        </div>
+        <div id="teamsContainer" class="teams-grid"></div>
+      </div>
+    </div>
+    <footer>
+      Built with ❤️ — Randomly assign players into teams by category (A, B, C...)
+    </footer>
+  </div>
+
+<script>
+const STORAGE_KEY = 'ffa_data_v2';
+let state = {
+  players: [],
+  categories: Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+  teams: [],
+  teamCount: 4
+};
+
+const $ = sel => document.querySelector(sel);
+const uid = () => Math.random().toString(36).slice(2,9);
+function loadState(){ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ try{Object.assign(state, JSON.parse(raw));}catch{}} }
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function refreshUI(){
+  const catSel = $('#categorySelect'); catSel.innerHTML='';
+  state.categories.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
+  const list = $('#playerList'); list.innerHTML='';
+  state.players.forEach(p=>{ const el=document.createElement('div'); el.className='player-item'; el.innerHTML=`<div>${p.name} (${p.category})</div><div><button data-del="${p.id}" class="btn">🗑️</button></div>`; list.appendChild(el); });
+  $('#totalPlayers').textContent=state.players.length; renderTeams();
+}
+function addPlayer(name,cat){ if(!name)return; if(!state.categories.includes(cat)) state.categories.push(cat); state.players.push({id:uid(),name,category:cat}); saveState(); refreshUI(); }
+function deletePlayer(id){ state.players=state.players.filter(x=>x.id!==id); saveState(); refreshUI(); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function generateTeams(n){ n=Number(n)||1; const groups={}; state.players.forEach(p=>{(groups[p.category]??=[]).push({...p});}); Object.values(groups).forEach(g=>shuffle(g)); const teams=Array.from({length:n},()=>[]); Object.values(groups).forEach(g=>g.forEach((p,i)=>teams[i%n].push(p))); state.teams=teams; saveState(); refreshUI(); }
+function renderTeams(){ const c=$('#teamsContainer'); c.innerHTML=''; if(!state.teams.length)return; state.teams.forEach((t,i)=>{ const card=document.createElement('div'); card.className='team-card'; card.innerHTML=`<div class='team-title'>Team ${i+1}</div>`; t.forEach(p=>{ const chip=document.createElement('div'); chip.className='player-chip'; chip.textContent=`${p.name} - ${p.category}`; card.appendChild(chip); }); c.appendChild(card); }); }
+$('#addPlayerBtn').onclick=()=>{ addPlayer($('#playerName').value.trim(), $('#categorySelect').value); $('#playerName').value=''; };
+$('#playerList').onclick=e=>{ const id=e.target.dataset.del; if(id) deletePlayer(id); };
+$('#generateBtn').onclick=()=>generateTeams($('#teamCount').value);
+$('#reshuffleBtn').onclick=()=>generateTeams(state.teamCount);
+$('#exportBtn').onclick=()=>{ if(!state.teams.length){alert('Generate teams first');return;} let lines=['Team,Player,Category']; state.teams.forEach((t,i)=>t.forEach(p=>lines.push(`Team ${i+1},${p.name},${p.category}`))); const blob=new Blob([lines.join('\n')],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='teams.csv'; a.click(); };
+$('#saveBtn').onclick=()=>{ saveState(); alert('Saved'); };
+$('#resetBtn').onclick=()=>{ if(confirm('Reset everything?')){ state.players=[]; state.categories=Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ'); state.teams=[]; saveState(); refreshUI(); } };
+loadState(); refreshUI();
+</script>
+</body>
+</html>
