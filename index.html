@@ -1,4 +1,4 @@
-<!-- Updated FreeFire Team Assigner with categories A, B, C, D, E, F, G, H -->
+<!-- Updated FreeFire Team Assigner with Firebase Sync -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -19,27 +19,18 @@
     .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(12,15,30,0.06);}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
     input[type=text], select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9f2;background:transparent}
-    .row{display:flex;gap:10px}
     .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
     .btn-primary{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white}
     .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
     .muted{color:var(--muted);font-size:13px}
     .player-list{margin-top:12px;max-height:320px;overflow:auto;padding-right:6px}
     .player-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;margin-bottom:8px;background:var(--glass)}
-    .player-item .meta{font-size:13px}
-    .small{font-size:12px}
+    .player-chip{display:inline-flex;padding:6px 8px;border-radius:999px;background:rgba(0,0,0,0.04);margin:4px;font-size:13px}
     .teams-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
     .team-card{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);min-height:120px;border:1px solid rgba(0,0,0,0.04)}
     .team-title{font-weight:600;color:var(--accent);margin-bottom:10px}
-    .player-chip{display:inline-flex;padding:6px 8px;border-radius:999px;background:rgba(0,0,0,0.04);margin:4px 4px 4px 0;font-size:13px}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    .top-actions{display:flex;gap:8px;align-items:center}
     footer{padding:18px;text-align:center;color:var(--muted);font-size:13px}
-    .category-badge{font-size:12px;padding:4px 6px;border-radius:8px;background:rgba(0,0,0,0.03);margin-left:8px}
-    .flex{display:flex;align-items:center}
-    .spacer{flex:1}
     .danger{background:var(--danger);color:white}
-    .success{background:var(--success);color:white}
     @media (max-width:900px){.grid{grid-template-columns:1fr}header{flex-direction:column;gap:10px}}    
   </style>
 </head>
@@ -50,10 +41,6 @@
         <h1>FreeFire Team Assigner</h1>
         <div class="muted small">Create balanced teams by category — edit names, add categories, reshuffle.</div>
       </div>
-    </div>
-    <div class="top-actions">
-      <div class="muted small">Theme</div>
-      <button id="themeToggle" class="btn btn-ghost">🌙</button>
     </div>
   </header>
 
@@ -66,7 +53,6 @@
         <select id="categorySelect"></select>
         <div style="display:flex;gap:8px;margin-top:10px">
           <button id="addPlayerBtn" class="btn btn-primary">Add Player</button>
-          <input id="newCategoryInput" type="text" placeholder="Add category (press Enter)" />
         </div>
 
         <div style="margin-top:14px" class="muted small">Players (<span id="totalPlayers">0</span>)</div>
@@ -104,17 +90,13 @@
 
 <script>
 const STORAGE_KEY = 'ffa_data_v2';
-let state = {
-  players: [],
-  categories: Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-  teams: [],
-  teamCount: 4
-};
-
+let state = { players: [], categories: Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), teams: [], teamCount: 4 };
 const $ = sel => document.querySelector(sel);
 const uid = () => Math.random().toString(36).slice(2,9);
+
 function loadState(){ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ try{Object.assign(state, JSON.parse(raw));}catch{}} }
 function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
 function refreshUI(){
   const catSel = $('#categorySelect'); catSel.innerHTML='';
   state.categories.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
@@ -122,11 +104,13 @@ function refreshUI(){
   state.players.forEach(p=>{ const el=document.createElement('div'); el.className='player-item'; el.innerHTML=`<div>${p.name} (${p.category})</div><div><button data-del="${p.id}" class="btn">🗑️</button></div>`; list.appendChild(el); });
   $('#totalPlayers').textContent=state.players.length; renderTeams();
 }
+
 function addPlayer(name,cat){ if(!name)return; if(!state.categories.includes(cat)) state.categories.push(cat); state.players.push({id:uid(),name,category:cat}); saveState(); refreshUI(); }
 function deletePlayer(id){ state.players=state.players.filter(x=>x.id!==id); saveState(); refreshUI(); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function generateTeams(n){ n=Number(n)||1; const groups={}; state.players.forEach(p=>{(groups[p.category]??=[]).push({...p});}); Object.values(groups).forEach(g=>shuffle(g)); const teams=Array.from({length:n},()=>[]); Object.values(groups).forEach(g=>g.forEach((p,i)=>teams[i%n].push(p))); state.teams=teams; saveState(); refreshUI(); }
 function renderTeams(){ const c=$('#teamsContainer'); c.innerHTML=''; if(!state.teams.length)return; state.teams.forEach((t,i)=>{ const card=document.createElement('div'); card.className='team-card'; card.innerHTML=`<div class='team-title'>Team ${i+1}</div>`; t.forEach(p=>{ const chip=document.createElement('div'); chip.className='player-chip'; chip.textContent=`${p.name} - ${p.category}`; card.appendChild(chip); }); c.appendChild(card); }); }
+
 $('#addPlayerBtn').onclick=()=>{ addPlayer($('#playerName').value.trim(), $('#categorySelect').value); $('#playerName').value=''; };
 $('#playerList').onclick=e=>{ const id=e.target.dataset.del; if(id) deletePlayer(id); };
 $('#generateBtn').onclick=()=>generateTeams($('#teamCount').value);
@@ -135,6 +119,50 @@ $('#exportBtn').onclick=()=>{ if(!state.teams.length){alert('Generate teams firs
 $('#saveBtn').onclick=()=>{ saveState(); alert('Saved'); };
 $('#resetBtn').onclick=()=>{ if(confirm('Reset everything?')){ state.players=[]; state.categories=Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ'); state.teams=[]; saveState(); refreshUI(); } };
 loadState(); refreshUI();
+</script>
+
+<!-- 🔥 Firebase Firestore Integration -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  // ✅ Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCc9_acArcOXQttHQPbdFz4L95GN2O8cGI",
+    authDomain: "freefire-team-assigner.firebaseapp.com",
+    projectId: "freefire-team-assigner",
+    storageBucket: "freefire-team-assigner.firebasestorage.app",
+    messagingSenderId: "73297036453",
+    appId: "1:73297036453:web:6598b3f568d60c7e3f794c",
+    measurementId: "G-DCL5PFX7DS"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function saveToFirestore() {
+    const ref = collection(db, "players");
+    const snap = await getDocs(ref);
+    for (let d of snap.docs) await deleteDoc(doc(db, "players", d.id));
+    for (let p of state.players) await addDoc(ref, p);
+    alert("✅ Saved to Firebase!");
+  }
+
+  async function loadFromFirestore() {
+    const ref = collection(db, "players");
+    const snap = await getDocs(ref);
+    state.players = [];
+    snap.forEach(d => state.players.push(d.data()));
+    saveState();
+    refreshUI();
+  }
+
+  // 🔄 Replace Save button
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) saveBtn.onclick = saveToFirestore;
+
+  // 🔁 Auto load from Firebase on start
+  loadFromFirestore();
 </script>
 </body>
 </html>
